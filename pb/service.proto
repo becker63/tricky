@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package calculator;
+
+option go_package = "./pb";
+
+service Calculator {
+  rpc Start_i(StartStop_req)  returns (Machine_return);
+  rpc Stop_i(StartStop_req) returns (Machine_return);
+  rpc GetConfig_i(Config_req) returns (Machine_return);
+  rpc ChangeConfig_i(Config_req) returns (Machine_return);
+}
+
+message StartStop_req {
+  uint32 User_id = 1;
+}
+
+enum Runners {
+    Binary = 0;
+    Java = 1;
+}
+
+message FileMap {
+    // <string: filepath, bytes: file content>
+    map<string, bytes> fields = 1;
+}
+
+message Config_req {
+  uint32 User_id = 1;
+  Runners Runner = 2;
+  string BinaryPath = 3;
+  optional string RemoteZip = 4;
+  optional FileMap Files = 5;
+}
+
+message Machine_return { bool result = 1; }
