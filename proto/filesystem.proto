@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package tricky;
+
+option go_package = "./pb";
+
+message Child {
+    optional Dir dir = 1;
+    optional File file = 2;
+}
+
+message File {
+    string name = 1;
+    bytes content = 2;
+}
+
+message Dir {
+    string name = 1;
+    // path: string, content: Child
+    map<string, Child> children = 2;
+}

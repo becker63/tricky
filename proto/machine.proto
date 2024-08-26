@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package tricky;
+
+option go_package = "./pb";
+import "filesystem.proto";
+
+service tricky {
+  // Machine api
+  rpc Start(StartStop_req) returns (Sucess);
+  rpc Stop(StartStop_req) returns (Sucess);
+  rpc GetConfig(User) returns (Config_req);
+  rpc ChangeConfig(Config_req) returns (Sucess);
+
+}
+
+message Sucess {
+    bool sucess = 1;
+}
+
+message User {
+    uint32 userid = 1;
+}
+
+message StartStop_req {
+  uint32 User_id = 1;
+  uint32 Machine_id = 2;
+}
+
+enum Runner {
+    Binary = 0;
+    Java = 1;
+}
+
+message Config_req {
+  User user = 1;
+  uint32 Machine_id = 2;
+  Runner Runner = 3;
+  string BinaryPath = 4;
+  optional string RemoteZip = 5;
+  optional Dir Files = 6;
+}

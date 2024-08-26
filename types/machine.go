@@ -13,4 +13,6 @@ type BoxConst int
 
 const (
 	Demo BoxConst = iota
+	Test
+	Container
 )
