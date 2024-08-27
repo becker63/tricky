@@ -5,6 +5,7 @@ package cwalk
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -51,6 +52,8 @@ func (wel WalkerErrorList) Error() string {
 	return ""
 }
 
+type WalkFunc func(path string, info fs.FileInfo, err error, root string) error
+
 // Walker is constructed for each Walk() function invocation
 type Walker struct {
 	wg             sync.WaitGroup
@@ -58,7 +61,7 @@ type Walker struct {
 	jobs           chan string
 	root           string
 	followSymlinks bool
-	walkFunc       filepath.WalkFunc
+	walkFunc       WalkFunc
 	errors         chan WalkerError
 	errorList      WalkerErrorList // this is where we store the errors as we go
 }
@@ -129,7 +132,7 @@ func (w *Walker) processPath(relpath string) error {
 		subpath := filepath.Join(relpath, name)
 		info, err := w.lstat(subpath)
 
-		err = w.walkFunc(subpath, info, err)
+		err = w.walkFunc(subpath, info, err, w.root)
 
 		if err == filepath.SkipDir {
 			return nil
@@ -195,7 +198,7 @@ func (w *Walker) worker() {
 // Walk recursively descends into subdirectories,
 // calling walkFn for each file or directory
 // in the tree, including the root directory.
-func (w *Walker) Walk(relpath string, walkFn filepath.WalkFunc) error {
+func (w *Walker) Walk(relpath string, walkFn WalkFunc) error {
 	w.errors = make(chan WalkerError, BufferSize)
 	w.jobs = make(chan string, BufferSize)
 	w.walkFunc = walkFn
@@ -204,7 +207,7 @@ func (w *Walker) Walk(relpath string, walkFn filepath.WalkFunc) error {
 	go w.collectErrors()
 
 	info, err := w.lstat(relpath)
-	err = w.walkFunc(relpath, info, err)
+	err = w.walkFunc(relpath, info, err, w.root)
 	if err == filepath.SkipDir {
 		return nil
 	}
@@ -239,7 +242,7 @@ func (w *Walker) Walk(relpath string, walkFn filepath.WalkFunc) error {
 // Walk is a wrapper function for the Walker object
 // that mimics the behavior of filepath.Walk,
 // and doesn't follow symlinks.
-func Walk(root string, walkFn filepath.WalkFunc) error {
+func Walk(root string, walkFn WalkFunc) error {
 	w := Walker{
 		root: root,
 	}
@@ -249,7 +252,7 @@ func Walk(root string, walkFn filepath.WalkFunc) error {
 // WalkWithSymlinks is a wrapper function for the Walker object
 // that mimics the behavior of filepath.Walk, but follows
 // directory symlinks.
-func WalkWithSymlinks(root string, walkFn filepath.WalkFunc) error {
+func WalkWithSymlinks(root string, walkFn WalkFunc) error {
 	w := Walker{
 		root:           root,
 		followSymlinks: true,

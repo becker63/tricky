@@ -2,42 +2,55 @@ package helpers
 
 import (
 	"fmt"
+	"io"
 	"os"
-	"sync"
-
-	p "path"
+	"path/filepath"
 
 	cwalk "github.com/becker63/tricky/helpers/cwalk"
+	"github.com/puzpuzpuz/xsync/v3"
 )
 
-var tempMap sync.Map
-var Gdirpath = ""
+type FileContent struct {
+	isDir bool
+	// initialized to zero
+	content []byte
+}
 
-func RecusiveReadDir(dirpath string) {
-	err := cwalk.Walk(dirpath, walkFunc)
-	Gdirpath = dirpath
-	fmt.Println(Gdirpath)
+var tempMap = xsync.NewMapOf[string, FileContent]()
+
+func RecusiveReadDir(dirpath string) *xsync.MapOf[string, FileContent] {
+	err := cwalk.WalkWithSymlinks(dirpath, walkFunc)
 
 	if err != nil {
 		fmt.Printf("Error : %s\n", err.Error())
 	}
 
-	// TODO: not this
-	var RealMap = make(map[string][]byte)
-	tempMap.Range(func(k, v any) bool {
-		RealMap[k.(string)] = v.([]byte)
-		return true
-	})
-	fmt.Println(RealMap["world_nether/DIM-1/region/r.-1.-1.mca"])
+	return tempMap
 }
 
-func walkFunc(path string, info os.FileInfo, err error) error {
-
-	var abspath = p.Join(Gdirpath, path)
-	filecontent, err := os.ReadFile(abspath)
+func walkFunc(path string, info os.FileInfo, err error, root string) error {
 	if err != nil {
-		// fmt.Println(err)
+		return err
 	}
-	tempMap.Store(path, filecontent)
+	abs := filepath.Join(root, path)
+	if !info.IsDir() {
+		// open the file
+		file, err := os.Open(abs)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		// Read the entire file into a byte slice
+		data, err := io.ReadAll(file)
+		if err != nil {
+			fmt.Println("Error reading file:", err)
+			return err
+		}
+		tempMap.Store(path, FileContent{isDir: false, content: data})
+		return nil
+	}
+	// if is a dir, we can check by going key==value
+	tempMap.Store(path, FileContent{isDir: true})
 	return nil
 }
