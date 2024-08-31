@@ -1,0 +1,1 @@
+self.__NEXT_FONT_MANIFEST="{\"pages\":{},\"app\":{\"/Users/becker/Documents/code/tricky/apps/frontend/src/app/layout\":[\"static/media/64bd95b4581e8e73-s.p.woff2\",\"static/media/f36ad5a94261c3ca-s.p.woff2\",\"static/media/cdada0b153170c17-s.p.ttf\"]},\"appUsingSizeAdjust\":true,\"pagesUsingSizeAdjust\":false}"
